@@ -1,5 +1,8 @@
-import 'package:enough_coi/enough_coi.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'mail_server_config.g.dart';
+
+@JsonSerializable(explicitToJson: true)
 class ClientConfig {
   String version;
   List<ConfigEmailProvider> emailProviders;
@@ -12,6 +15,13 @@ class ClientConfig {
   bool get isValid => !isNotValid;
 
   ClientConfig({this.version});
+
+  /// JSON generation code
+  factory ClientConfig.fromJson(Map<String, dynamic> json) =>
+      _$ClientConfigFromJson(json);
+
+  /// JSON generation code
+  Map<String, dynamic> toJson() => _$ClientConfigToJson(this);
 
   void addEmailProvider(ConfigEmailProvider provider) {
     emailProviders ??= <ConfigEmailProvider>[];
@@ -35,11 +45,11 @@ class ClientConfig {
       emailProviders?.isEmpty ?? true
           ? null
           : emailProviders.first.preferredOutgoingSmtpServer;
-  String get displayName => emailProviders?.isEmpty ?? true
-      ? null
-      : emailProviders.first.displayName;
+  String get displayName =>
+      emailProviders?.isEmpty ?? true ? null : emailProviders.first.displayName;
 }
 
+@JsonSerializable(explicitToJson: true)
 class ConfigEmailProvider {
   String id;
   List<String> domains;
@@ -61,6 +71,13 @@ class ConfigEmailProvider {
       this.displayShortName,
       this.incomingServers,
       this.outgoingServers});
+
+  /// JSON generation code
+  factory ConfigEmailProvider.fromJson(Map<String, dynamic> json) =>
+      _$ConfigEmailProviderFromJson(json);
+
+  /// JSON generation code
+  Map<String, dynamic> toJson() => _$ConfigEmailProviderToJson(this);
 
   void addDomain(String name) {
     domains ??= <String>[];
@@ -110,12 +127,15 @@ enum Authentication {
 
 enum UsernameType { emailAddress, emailLocalPart, realname, unknown }
 
+@JsonSerializable(explicitToJson: true)
 class ServerConfig {
   String typeName;
   ServerType type;
   String hostname;
   int port;
   SocketType socketType;
+  String get socketTypeName =>
+      socketType.toString().substring('sockeType.'.length);
   Authentication authentication;
   Authentication authenticationAlternative;
   String username;
@@ -130,6 +150,13 @@ class ServerConfig {
       this.socketType,
       this.authentication,
       this.username});
+
+  /// JSON generation code
+  factory ServerConfig.fromJson(Map<String, dynamic> json) =>
+      _$ServerConfigFromJson(json);
+
+  /// JSON generation code
+  Map<String, dynamic> toJson() => _$ServerConfigToJson(this);
 
   @override
   String toString() {

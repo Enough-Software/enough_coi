@@ -5,7 +5,7 @@ void main() async {
   var email = 'user@domain.com';
   var config = await client.discover(email);
   if (config != null) {
-    var account = await client.tryLogin(email, config);
+    var account = await client.tryLogin(email, config, password: 'secret');
     if (account != null) {
       var isChatMessage = true;
       var recipients = ['Lise.Meitner@domain.com'];

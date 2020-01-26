@@ -1,4 +1,4 @@
-Experimental COI client for Dart developers.
+Experimental [COI](https://coi-dev.org) client for Dart developers.
 
 
 Available under the commercial friendly 

@@ -135,7 +135,7 @@ class ServerConfig {
   int port;
   SocketType socketType;
   String get socketTypeName =>
-      socketType.toString().substring('sockeType.'.length);
+      socketType.toString().substring('socketType.'.length);
   Authentication authentication;
   Authentication authenticationAlternative;
   String username;

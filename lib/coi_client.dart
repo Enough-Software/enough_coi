@@ -210,7 +210,7 @@ class CoiClient {
 
   Future<bool> sendMessage(bool isChatMessage, String text,
       List<String> recipients, EmailAccount account,
-      [String subject = null]) {
+      [String subject]) {
     //TODO allow to reply to message
     //TODO allow to send other message types than text
     var connectedAccount = _getConnectedAccount(account);
@@ -230,7 +230,9 @@ class CoiClient {
       message.addHeader('Message-Id',
           '<chat\$${DateTime.now().microsecondsSinceEpoch}@${MailHelper.getDomainFromEmail(account.email)}>');
     }
-    message.addHeader('Subject', subject);
+    if (subject != null) {
+      message.addHeader('Subject', subject);
+    }
     message.recipients = recipients;
     message.bodyRaw = text;
 

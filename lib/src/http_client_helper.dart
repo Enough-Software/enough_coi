@@ -14,7 +14,9 @@ class HttpClientHelper {
       }
       var responseBody = await httpReadResponse(response);
       return SimpleHttpResponse(response.statusCode, responseBody);
-    } catch (SocketException) {}
+    } catch (e) {
+      stderr.writeln('Unabkle to GET $url: $e');
+    }
     return null;
   }
 

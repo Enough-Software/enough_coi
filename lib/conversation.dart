@@ -8,5 +8,4 @@ class Conversation {
 
   //TODO bring conversations to life
 
-  
 }

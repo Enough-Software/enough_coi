@@ -1,5 +1,5 @@
 name: enough_coi
-description: Experimental client for COI apps.
+description: Experimental client for COI apps. [COI](https://coi-dev.org) is a server and client standard  for messaging based on email.
 version: 0.0.3
 homepage: https://github.com/Enough-Software/enough_coi
 

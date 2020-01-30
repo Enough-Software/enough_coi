@@ -1,6 +1,6 @@
 name: enough_coi
 description: Experimental client for COI apps.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/Enough-Software/enough_coi
 
 environment:

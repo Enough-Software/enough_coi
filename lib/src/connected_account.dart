@@ -52,7 +52,7 @@ class ConnectedAccount {
     return response.isOkStatus;
   }
 
-  Future<List<Message>> fetchMessageHeaders() async {
+  Future<List<MimeMessage>> fetchMessageHeaders() async {
     var connected = await _connectIncomingIfRequired();
     if (!connected) {
       print('connection failed');
@@ -75,14 +75,59 @@ class ConnectedAccount {
     //TODO use QRESYNC value to see if a refresh is required
     var lowerSequenceNumber =
         (mailbox.messagesExists < 100) ? 1 : mailbox.messagesExists - 100;
-    var fetchContents = 'BODY[HEADER]'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
+    var fetchContents =
+        'BODY[HEADER]'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
     var fetchHeaderResponse = await imapClient.fetchMessages(
         mailbox.messagesExists, lowerSequenceNumber, fetchContents);
     return fetchHeaderResponse.result;
   }
 
-  Future<Message> fetchMessageBody(Message message) async {
-    var response = await imapClient.fetchMessagesByCriteria('${message.sequenceId} BODY[1]');
+  Future<List<MimeMessage>> fetchChatMessages() async {
+    var connected = await _connectIncomingIfRequired();
+    if (!connected) {
+      print('connection failed');
+      return null;
+    }
+    var mailboxResponse = await imapClient.listMailboxes();
+    if (mailboxResponse.isFailedStatus || mailboxResponse.result.isEmpty) {
+      print('no mailboxes');
+      return null;
+    }
+    var mailbox = mailboxResponse.result
+        .firstWhere((box) => box.name?.toLowerCase() == 'inbox');
+    var selectResponse = await imapClient.selectMailbox(mailbox);
+    if (selectResponse.isFailedStatus) {
+      return null;
+    }
+    if (mailbox.messagesExists == 0) {
+      return null;
+    }
+    //TODO use QRESYNC value to see if a refresh is required
+    var lowerSequenceNumber =
+        (mailbox.messagesExists < 100) ? 1 : mailbox.messagesExists - 100;
+    var fetchContents =
+        '(ENVELOPE BODY.PEEK[HEADER.FIELDS (References Subject From)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
+    var fetchHeaderResponse = await imapClient.fetchMessages(
+        mailbox.messagesExists, lowerSequenceNumber, fetchContents);
+    var allMessages = fetchHeaderResponse.result;
+    var chatMessages = <MimeMessage>[];
+    for (var message in allMessages) {
+      var references = message.getHeaderValue('references');
+      if (references != null) {
+        if (references.startsWith(r'<chat$')) {
+          chatMessages.add(message);
+        }
+      } else if (message.messageId != null &&
+          message.messageId.startsWith(r'<chat$')) {
+        chatMessages.add(message);
+      }
+    }
+    return chatMessages;
+  }
+
+  Future<MimeMessage> fetchMessageBody(MimeMessage message) async {
+    var response = await imapClient
+        .fetchMessagesByCriteria('${message.sequenceId} BODY[1]');
     if (response.isOkStatus && response.result.isNotEmpty) {
       var responseMessage = response.result.first;
       var content = responseMessage.getBodyPart(1);
@@ -93,7 +138,7 @@ class ConnectedAccount {
     return null;
   }
 
-  Future<bool> sendMessage(Message message) async {
+  Future<bool> sendMessage(MimeMessage message) async {
     var connected = await _connectOutgoingIfRequired();
     if (connected) {
       var response = await smtpClient.sendMessage(message);

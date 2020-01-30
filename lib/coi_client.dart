@@ -116,8 +116,10 @@ class CoiClient {
       String outgoingUserName,
       String outgoingPassword,
       ServerConfig outgoingServer}) async {
-    if (config.preferredIncomingImapServer == null ||
-        config.preferredOutgoingSmtpServer == null) {
+    if ((incomingServer == null &&
+            config.preferredIncomingImapServer == null) ||
+        (outgoingServer == null &&
+            config.preferredOutgoingSmtpServer == null)) {
       return null;
     }
     incomingServer ??= config.preferredIncomingImapServer;
@@ -179,7 +181,7 @@ class CoiClient {
   }
 
   ConnectedAccount _getConnectedAccount(EmailAccount account) {
-    //TODO use factory constructor
+    //TODO use factory constructor?
     ConnectedAccount connectedAccount;
     if (!_connectedAccounts.containsKey(account)) {
       connectedAccount = ConnectedAccount(account, eventBus, _clientDomain,
@@ -191,12 +193,17 @@ class CoiClient {
     return connectedAccount;
   }
 
-  Future<List<Message>> fetchMessageHeaders(EmailAccount account) {
+  Future<List<MimeMessage>> fetchMessageHeaders(EmailAccount account) {
     var connectedAccount = _getConnectedAccount(account);
     return connectedAccount.fetchMessageHeaders();
   }
 
-  Future<Message> fetchMessageBody(Message message, account) {
+  Future<List<MimeMessage>> fetchChatMessages(EmailAccount account) {
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.fetchChatMessages();
+  }
+
+  Future<MimeMessage> fetchMessageBody(MimeMessage message, account) {
     var connectedAccount = _getConnectedAccount(account);
     return connectedAccount.fetchMessageBody(message);
   }
@@ -207,7 +214,7 @@ class CoiClient {
     //TODO allow to reply to message
     //TODO allow to send other message types than text
     var connectedAccount = _getConnectedAccount(account);
-    var message = Message();
+    var message = MimeMessage();
     message.addHeader('From', account.email);
     message.addHeader('To', recipients.join(';'));
     message.addHeader(

@@ -11,8 +11,9 @@ dependencies:
   xml: ^3.7.0
   event_bus: ^1.1.0
   objectdb: ^1.0.7+1
-  enough_mail: ^0.0.1
   json_annotation: ^3.0.1
+  enough_mail: ^0.0.2
+    # path: ../enough_mail
 
 dev_dependencies:
   pedantic: ^1.8.0

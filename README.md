@@ -35,7 +35,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_coi: ^0.0.2
+  enough_coi: ^0.0.4
 ```
 
 For more info visit [pub.dev](https://pub.dev/packages/enough_coi).

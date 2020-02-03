@@ -59,7 +59,27 @@ class CoiClient {
   }
 
   Future<ClientConfig> discover(String emailAddress,
-      {bool isEmailValidated = false}) async {
+      {bool isEmailValidated = false, bool forceSslConnection = false}) async {
+    var config = await _discover(emailAddress, isEmailValidated);
+    if (forceSslConnection && config != null) {
+      if (config.preferredIncomingImapServer != null && !config.preferredIncomingImapServer.isSecureSocket) {
+        config.preferredIncomingImapServer.port = 993;
+        config.preferredIncomingImapServer.socketType = SocketType.ssl;
+      }
+      if (config.preferredIncomingPopServer != null && !config.preferredIncomingPopServer.isSecureSocket) {
+        config.preferredIncomingPopServer.port = 995;
+        config.preferredIncomingPopServer.socketType = SocketType.ssl;
+      }
+      if (config.preferredOutgoingSmtpServer != null && !config.preferredOutgoingSmtpServer.isSecureSocket) {
+        config.preferredOutgoingSmtpServer.port = 465;
+        config.preferredOutgoingSmtpServer.socketType = SocketType.ssl;
+      }
+    }
+    return config;
+  }
+
+  Future<ClientConfig> _discover(String emailAddress,
+      bool isEmailValidated) async {
     if (!isEmailValidated && MailHelper.isNotEmailAddress(emailAddress)) {
       return null;
     }
@@ -93,6 +113,10 @@ class CoiClient {
     //print('got config $config for $mxDomain.');
     return _updateDisplayNames(config, emailDomain);
   }
+
+  
+
+
 
   Future<List<EmailAccount>> addAccount(EmailAccount account) async {
     _accounts.add(account);

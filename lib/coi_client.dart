@@ -62,15 +62,18 @@ class CoiClient {
       {bool isEmailValidated = false, bool forceSslConnection = false}) async {
     var config = await _discover(emailAddress, isEmailValidated);
     if (forceSslConnection && config != null) {
-      if (config.preferredIncomingImapServer != null && !config.preferredIncomingImapServer.isSecureSocket) {
+      if (config.preferredIncomingImapServer != null &&
+          !config.preferredIncomingImapServer.isSecureSocket) {
         config.preferredIncomingImapServer.port = 993;
         config.preferredIncomingImapServer.socketType = SocketType.ssl;
       }
-      if (config.preferredIncomingPopServer != null && !config.preferredIncomingPopServer.isSecureSocket) {
+      if (config.preferredIncomingPopServer != null &&
+          !config.preferredIncomingPopServer.isSecureSocket) {
         config.preferredIncomingPopServer.port = 995;
         config.preferredIncomingPopServer.socketType = SocketType.ssl;
       }
-      if (config.preferredOutgoingSmtpServer != null && !config.preferredOutgoingSmtpServer.isSecureSocket) {
+      if (config.preferredOutgoingSmtpServer != null &&
+          !config.preferredOutgoingSmtpServer.isSecureSocket) {
         config.preferredOutgoingSmtpServer.port = 465;
         config.preferredOutgoingSmtpServer.socketType = SocketType.ssl;
       }
@@ -78,8 +81,8 @@ class CoiClient {
     return config;
   }
 
-  Future<ClientConfig> _discover(String emailAddress,
-      bool isEmailValidated) async {
+  Future<ClientConfig> _discover(
+      String emailAddress, bool isEmailValidated) async {
     if (!isEmailValidated && MailHelper.isNotEmailAddress(emailAddress)) {
       return null;
     }
@@ -114,21 +117,23 @@ class CoiClient {
     return _updateDisplayNames(config, emailDomain);
   }
 
-  
-
-
-
   Future<List<EmailAccount>> addAccount(EmailAccount account) async {
     _accounts.add(account);
     await _storage.addAccount(account);
     return _accounts;
   }
 
-  Future<List<EmailAccount>> removeAccount(EmailAccount account) async {
+  Future<bool> removeAccount(EmailAccount account) async {
     var removed = _accounts.remove(account);
     if (removed) {
       await _storage.removeAccount(account);
+      return true;
+    } else {
+      return false;
     }
+  }
+
+  List<EmailAccount> getAccounts() {
     return _accounts;
   }
 

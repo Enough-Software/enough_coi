@@ -1,3 +1,7 @@
+import 'package:enough_coi/conversation.dart';
+import 'package:enough_coi/message.dart';
+import 'package:enough_coi/src/conversation_manager.dart';
+import 'package:enough_coi/src/message_manager.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/enough_mail.dart';
 
@@ -8,14 +12,18 @@ class ConnectedAccount {
   EmailAccount account;
   ImapClient imapClient;
   SmtpClient smtpClient;
+  ConversationManager _conversationManager;
+  MessageManager _messageManager;
 
   final EventBus _bus;
   final String _clientDomain;
   bool _isLogEnabled;
 
-  ConnectedAccount(this.account, this._bus, this._clientDomain,
+  ConnectedAccount(this.account, this._bus, this._clientDomain, 
       {this.imapClient, this.smtpClient, bool isLogEnabled = false}) {
     _isLogEnabled = isLogEnabled;
+    _conversationManager = ConversationManager(account);
+    _messageManager = MessageManager(_conversationManager);
   }
 
   Future<bool> connectIncoming() async {
@@ -136,6 +144,41 @@ class ConnectedAccount {
       return message;
     }
     return null;
+  }
+
+   Future<List<Conversation>> fetchConversations() async {
+
+    var connected = await _connectIncomingIfRequired();
+    if (!connected) {
+      print('connection failed');
+      return null;
+    }
+    var mailboxResponse = await imapClient.listMailboxes();
+    if (mailboxResponse.isFailedStatus || mailboxResponse.result.isEmpty) {
+      print('no mailboxes');
+      return null;
+    }
+    var mailbox = mailboxResponse.result
+        .firstWhere((box) => box.name?.toLowerCase() == 'inbox');
+    var selectResponse = await imapClient.selectMailbox(mailbox);
+    if (selectResponse.isFailedStatus) {
+      return null;
+    }
+    if (mailbox.messagesExists == 0) {
+      return null;
+    }
+    //TODO use QRESYNC value to see if a refresh is required
+    var lowerSequenceNumber =
+        (mailbox.messagesExists < 100) ? 1 : mailbox.messagesExists - 100;
+    var fetchContents =
+        '(ENVELOPE BODY.PEEK[HEADER.FIELDS (References Subject From To Cc Date)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
+    var fetchHeaderResponse = await imapClient.fetchMessages(
+        mailbox.messagesExists, lowerSequenceNumber, fetchContents);
+    var allMessages = fetchHeaderResponse.result;
+    for (var mimeMessage in allMessages) {
+      await _messageManager.addMessage(mimeMessage);
+    }
+    return _conversationManager.getConversations();
   }
 
   Future<bool> sendMessage(MimeMessage message) async {

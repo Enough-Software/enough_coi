@@ -1,4 +1,5 @@
 //import 'package:enough_coi/mail_server_config.dart';
+import 'package:enough_coi/conversation.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_coi/enough_coi.dart';
 import 'package:enough_coi/src/connected_account.dart';
@@ -235,6 +236,11 @@ class CoiClient {
   Future<MimeMessage> fetchMessageBody(MimeMessage message, account) {
     var connectedAccount = _getConnectedAccount(account);
     return connectedAccount.fetchMessageBody(message);
+  }
+
+  Future<List<Conversation>> fetchConversations(EmailAccount account) {
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.fetchConversations();
   }
 
   Future<bool> sendMessage(bool isChatMessage, String text,

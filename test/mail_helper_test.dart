@@ -4,8 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('Autoconfigure tests', () {
     test('Autodiscover - parse 1&1 config', () async {
-      var definition = 
-'''
+      var definition = '''
 <clientConfig version="1.1">
  <emailProvider id="1und1.de">
   <!--  DSL customers  -->
@@ -393,8 +392,6 @@ void main() {
           'https://www.one.com/en/support/guide/mail/setting-up-thunderbird');
     });
 
-
-    
     test('Autodiscover - parse freenet.de config', () async {
       var definition = '''
 <clientConfig version="1.1">
@@ -480,6 +477,63 @@ void main() {
 
       expect(provider.documentationUrl,
           'http://email-hilfe.freenet.de/documents/Beitrag/15916/einstellungen-serverdaten-fuer-alle-e-mail-programme');
+    });
+  });
+
+  group('Email parsing tests', () {
+    test('parseEmails 1', () {
+      var emails = MailHelper.parseEmailAddreses('name@domain.com');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 1);
+      expect(emails[0].name, isNull);
+      expect(emails[0].email, 'name@domain.com');
+      expect(emails[0].domain, 'domain.com');
+    });
+
+    test('parseEmails 2', () {
+      var emails = MailHelper.parseEmailAddreses('"my name" <name@domain.com>');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 1);
+      expect(emails[0].name, 'my name');
+      expect(emails[0].email, 'name@domain.com');
+      expect(emails[0].domain, 'domain.com');
+    });
+
+    test('parseEmails 3', () {
+      var emails = MailHelper.parseEmailAddreses('"my name" name@domain.com');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 1);
+      expect(emails[0].name, 'my name');
+      expect(emails[0].email, 'name@domain.com');
+      expect(emails[0].domain, 'domain.com');
+    });
+
+    test('parseEmails 4', () {
+      var emails = MailHelper.parseEmailAddreses(
+          '"my name" <name@domain.com>;other@domain.com');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 2);
+      expect(emails[0].name, 'my name');
+      expect(emails[0].email, 'name@domain.com');
+      expect(emails[1].name, isNull);
+      expect(emails[1].email, 'other@domain.com');
+    });
+    test('parseEmails 5', () {
+      var emails = MailHelper.parseEmailAddreses(
+          '"my name" <name@domain.com>;  "last, first" <first.last@domain.com>; other@domain.com');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 3);
+      expect(emails[0].name, 'my name');
+      expect(emails[0].email, 'name@domain.com');
+      expect(emails[1].name, 'last, first');
+      expect(emails[1].email, 'first.last@domain.com');
+      expect(emails[2].name, isNull);
+      expect(emails[2].email, 'other@domain.com');
     });
   });
 }

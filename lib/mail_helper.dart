@@ -302,6 +302,43 @@ class MailHelper {
   }
 
   static List<EmailAddress> parseEmailAddreses(String emailText) {
+    /*
+    TODO: the current implementation is quite naive
+    Here is a list of valid email addresses (without name):
+    Abc@example.com                               (English, ASCII)
+    Abc.123@example.com                           (English, ASCII)   
+    user+mailbox/department=shipping@example.com  (English, ASCII)
+    !#$%&'*+-/=?^_`.{|}~@example.com              (English, ASCII)
+    "Abc@def"@example.com                         (English, ASCII)
+    "Fred Bloggs"@example.com                     (English, ASCII)
+    "Joe.\\Blow"@example.com                      (English, ASCII)
+    simple@example.com
+    very.common@example.com
+    disposable.style.email.with+symbol@example.com
+    other.email-with-hyphen@example.com
+    fully-qualified-domain@example.com
+    user.name+tag+sorting@example.com (may go to user.name@example.com inbox depending on mail server)
+    x@example.com (one-letter local-part)
+    example-indeed@strange-example.com
+    admin@mailserver1 (local domain name with no TLD, although ICANN highly discourages dotless email addresses)
+    example@s.example (see the List of Internet top-level domains)
+    " "@example.org (space between the quotes)
+    "john..doe"@example.org (quoted double dot)
+    mailhost!username@example.org (bangified host route used for uucp mailers)
+    user%example.com@example.org (% escaped mail route to user@example.com via example.org)
+    用户@例子.广告               (Chinese, Unicode)
+    अजय@डाटा.भारत               (Hindi, Unicode)
+    квіточка@пошта.укр          (Ukrainian, Unicode)
+    θσερ@εχαμπλε.ψομ            (Greek, Unicode)
+    Dörte@Sörensen.example.com  (German, Unicode)
+    коля@пример.рф              (Russian, Unicode)
+    Latin alphabet with diacritics: Pelé@example.com
+    Greek alphabet: δοκιμή@παράδειγμα.δοκιμή
+    Traditional Chinese characters: 我買@屋企.香港
+    Japanese characters: 二ノ宮@黒川.日本
+    Cyrillic characters: медведь@с-балалайкой.рф
+    Devanagari characters: संपर्क@डाटामेल.भारत
+    */
     var textParts = StringHelper.split(emailText);
     var addresses = <EmailAddress>[];
     for (var i = 0; i < textParts.length; i++) {

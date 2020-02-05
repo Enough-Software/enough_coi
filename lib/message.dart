@@ -15,6 +15,10 @@ class Message {
       (threadReference != null) && threadReference.startsWith(r'<chat$');
 
   String source;
+  bool _hasText = false;
+  bool get hasText => _hasText;
+  String _text;
+  String get text => _text;
 
   Message();
   Message.withId(this.id);
@@ -30,6 +34,15 @@ class Message {
       recipients = addresses;
     } else {
       recipients.addAll(addresses);
+    }
+  }
+
+  void addPart(MessagePart part) {
+    parts ??= <MessagePart>[];
+    parts.add(part);
+    if (!_hasText && part is TextMessagePart) {
+      _text = part.text;
+      _hasText = part.text?.isNotEmpty ?? false;
     }
   }
 }

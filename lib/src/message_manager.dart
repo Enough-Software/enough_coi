@@ -27,6 +27,7 @@ class MessageParser {
   Message parse(MimeMessage rawMessage) {
     var parsedMessage = Message.withId(GuidHelper.createGuid());
     parsedMessage.subject = rawMessage.decodeHeaderValue('subject');
+    //print('parsing ${parsedMessage.subject}...');
     var fromRaw = rawMessage.decodeHeaderValue('from');
     if (fromRaw != null) {
       var addresses = MailHelper.parseEmailAddreses(fromRaw);
@@ -59,6 +60,11 @@ class MessageParser {
       // TODO parse date
       parsedMessage.date = DateTime.now();
     }
+    if (rawMessage.text != null) {
+      var decodedText = rawMessage.decodeContentText();
+      parsedMessage.addPart(TextMessagePart(decodedText));
+    }
+    // TODO add other message parts than text
     return parsedMessage;
   }
 }

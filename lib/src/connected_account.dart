@@ -171,7 +171,8 @@ class ConnectedAccount {
     var lowerSequenceNumber =
         (mailbox.messagesExists < 100) ? 1 : mailbox.messagesExists - 100;
     var fetchContents =
-        '(ENVELOPE BODY.PEEK[HEADER.FIELDS (References Subject From To Cc Date)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
+    '(BODY BODY.PEEK[HEADER.FIELDS (message-Id references subject from to cc date content-type content-transfer-encoding)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
+        //'(BODY.PEEK[TEXT] BODY.PEEK[HEADER.FIELDS (message-Id references subject from to cc date content-type content-transfer-encoding)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
     var fetchHeaderResponse = await imapClient.fetchMessages(
         mailbox.messagesExists, lowerSequenceNumber, fetchContents);
     var allMessages = fetchHeaderResponse.result;

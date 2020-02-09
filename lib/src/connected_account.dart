@@ -19,7 +19,7 @@ class ConnectedAccount {
   final String _clientDomain;
   bool _isLogEnabled;
 
-  ConnectedAccount(this.account, this._bus, this._clientDomain, 
+  ConnectedAccount(this.account, this._bus, this._clientDomain,
       {this.imapClient, this.smtpClient, bool isLogEnabled = false}) {
     _isLogEnabled = isLogEnabled;
     _conversationManager = ConversationManager(account);
@@ -146,8 +146,7 @@ class ConnectedAccount {
     return null;
   }
 
-   Future<List<Conversation>> fetchConversations() async {
-
+  Future<List<Conversation>> fetchConversations() async {
     var connected = await _connectIncomingIfRequired();
     if (!connected) {
       print('connection failed');
@@ -171,8 +170,7 @@ class ConnectedAccount {
     var lowerSequenceNumber =
         (mailbox.messagesExists < 100) ? 1 : mailbox.messagesExists - 100;
     var fetchContents =
-    '(BODY BODY.PEEK[HEADER.FIELDS (message-Id references subject from to cc date content-type content-transfer-encoding)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
-        //'(BODY.PEEK[TEXT] BODY.PEEK[HEADER.FIELDS (message-Id references subject from to cc date content-type content-transfer-encoding)])'; // '(FLAGS ENVELOPE BODY RFC822.SIZE BODY[HEADER])';
+        '(BODY.PEEK[HEADER.FIELDS (message-Id references subject from to cc date content-type content-transfer-encoding)])';
     var fetchHeaderResponse = await imapClient.fetchMessages(
         mailbox.messagesExists, lowerSequenceNumber, fetchContents);
     var allMessages = fetchHeaderResponse.result;
@@ -180,6 +178,76 @@ class ConnectedAccount {
       await _messageManager.addMessage(mimeMessage);
     }
     return _conversationManager.getConversations();
+  }
+
+  Future<Message> fetchMessageContents(Message message) async {
+    var fetchHeaderResponse = await imapClient
+        .fetchMessagesByCriteria('${message.sequenceId} (BODY BODY.PEEK[1])');
+    var allMessages = fetchHeaderResponse.result;
+    //print('allMessages.length=${allMessages?.length}');
+    if (allMessages?.length == 1) {
+      var mimeMessage = allMessages.first;
+      var bodyPartText = mimeMessage.getBodyPart(1);
+      var structures = mimeMessage.body?.structures;
+      //print('structures.length=${structures?.length}');
+      String decodedText;
+      if (structures != null && structures.isNotEmpty) {
+        var structure = structures.first;
+        //print('type=${structure.type}');
+        if (structure.type == 'text') {
+          var charsets = structure.attributes
+              .where((a) => a.name.toUpperCase() == 'CHARSET');
+          if (charsets.isNotEmpty) {
+            var charset = charsets.first.value;
+            var transferEncoding = structure.encoding;
+            //print('charset=$charset encoder=$transferEncoding');
+            decodedText = EncodingsHelper.decodeText(
+                bodyPartText, transferEncoding, charset);
+          }
+        }
+      }
+      if (decodedText == null) {
+        mimeMessage.text = bodyPartText;
+        decodedText = mimeMessage.decodeContentText();
+      }
+      if (decodedText != null && decodedText.length > 50) {
+        decodedText = decodedText.substring(0, 50) + '...';
+      }
+      message.addPart(TextMessagePart(decodedText));
+    } else {
+      print('unable to load ${message.sequenceId}');
+    }
+    return message;
+  }
+
+  Future<List<MetaDataEntry>> getMetaData(String entry,
+      {String mailboxName, int maxSize, MetaDataDepth depth}) async {
+    var connected = await _connectIncomingIfRequired();
+    if (!connected) {
+      print('connection failed');
+      return null;
+    }
+    var response = await imapClient.getMetaData(entry,
+        mailboxName: mailboxName, maxSize: maxSize, depth: depth);
+    if (response.isFailedStatus) {
+      return null;
+    }
+    return response.result;
+  }
+
+  Future<bool> setMetaData(String entry, String value,
+      {String mailboxName}) async {
+    var connected = await _connectIncomingIfRequired();
+    if (!connected) {
+      print('connection failed');
+      return null;
+    }
+    var metaDataEntry = MetaDataEntry()
+      ..entry = entry
+      ..valueText = value
+      ..mailboxName = mailboxName;
+    var response = await imapClient.setMetaData(metaDataEntry);
+    return response.isOkStatus;
   }
 
   Future<bool> sendMessage(MimeMessage message) async {
@@ -190,6 +258,11 @@ class ConnectedAccount {
     } else {
       return false;
     }
+  }
+
+  Future<List<Capability>> getIncomingCapabilities() async {
+    await _connectIncomingIfRequired();
+    return imapClient.serverInfo.capabilities;
   }
 
   Future<bool> _connectIncomingIfRequired() {
@@ -204,5 +277,9 @@ class ConnectedAccount {
       return connectOutgoing();
     }
     return Future.value(true);
+  }
+
+  String getIncomingHierarchySeparator() {
+    return imapClient?.serverInfo?.pathSeparator;
   }
 }

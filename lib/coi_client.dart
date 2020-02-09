@@ -1,5 +1,7 @@
 //import 'package:enough_coi/mail_server_config.dart';
 import 'package:enough_coi/conversation.dart';
+import 'package:enough_coi/message.dart';
+import 'package:enough_coi/src/guid_helper.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_coi/enough_coi.dart';
 import 'package:enough_coi/src/connected_account.dart';
@@ -223,24 +225,155 @@ class CoiClient {
     return connectedAccount;
   }
 
-  Future<List<MimeMessage>> fetchMessageHeaders(EmailAccount account) {
-    var connectedAccount = _getConnectedAccount(account);
-    return connectedAccount.fetchMessageHeaders();
-  }
-
-  Future<List<MimeMessage>> fetchChatMessages(EmailAccount account) {
-    var connectedAccount = _getConnectedAccount(account);
-    return connectedAccount.fetchChatMessages();
-  }
-
-  Future<MimeMessage> fetchMessageBody(MimeMessage message, account) {
-    var connectedAccount = _getConnectedAccount(account);
-    return connectedAccount.fetchMessageBody(message);
-  }
-
   Future<List<Conversation>> fetchConversations(EmailAccount account) {
     var connectedAccount = _getConnectedAccount(account);
     return connectedAccount.fetchConversations();
+  }
+
+  Future<Message> fetchMessageContents(Message message, EmailAccount account) {
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.fetchMessageContents(message);
+  }
+
+  Future<String> getWebPushVapidKey(EmailAccount account) async {
+    //TODO check if WEBPUSH capability is defined
+    var connectedAccount = _getConnectedAccount(account);
+    var entries = await connectedAccount
+        .getMetaData('/private/vendor/vendor.dovecot/webpush/vapid');
+    if (entries == null || entries.isEmpty) {
+      print('no webpush vapid key found');
+      return null;
+    }
+    return entries.first.valueText;
+  }
+
+  Future<List<WebPushSubscription>> getWebPushSubscriptions(
+      EmailAccount account) async {
+    var connectedAccount = _getConnectedAccount(account);
+    var entries = await connectedAccount.getMetaData(
+        '/private/vendor/vendor.dovecot/webpush/subscriptions',
+        depth: MetaDataDepth.directChildren);
+    if (entries == null || entries.isEmpty) {
+      print('no webpush subscriptions found');
+      return null;
+    }
+    var subscriptions = <WebPushSubscription>[];
+    for (var entry in entries) {
+      var subscription = WebPushSubscription.fromJson(entry.valueText);
+      subscription.id = entry.entry.substring(
+          '/private/vendor/vendor.dovecot/webpush/subscriptions/'.length);
+      subscriptions.add(subscription);
+    }
+    return subscriptions;
+  }
+
+  Future<bool> subscribeWebPush(
+      EmailAccount account, WebPushSubscription subscription) {
+    subscription.id ??= GuidHelper.createGuid();
+    var json = subscription.toJson();
+    var entry = '/private/vendor/vendor.dovecot/webpush/subscriptions/' +
+        subscription.id;
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.setMetaData(entry, json);
+  }
+
+  Future<bool> validatePushSubscription(
+      EmailAccount account, WebPushSubscription subscription, String validate) {
+    var entry = '/private/vendor/vendor.dovecot/webpush/subscriptions/' +
+        subscription.id +
+        '/validate';
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.setMetaData(entry, validate);
+  }
+
+  Future<bool> unsubscribeWebPush(
+      EmailAccount account, WebPushSubscription subscription) {
+    var entry = '/private/vendor/vendor.dovecot/webpush/subscriptions/' +
+        subscription.id;
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.setMetaData(entry, null);
+  }
+
+  Future<CoiServerConfiguration> getCoiServerConfiguration(
+      EmailAccount account) async {
+    var connectedAccount = _getConnectedAccount(account);
+    var isServerCoiCompliant = false;
+    var isServerWebPushCompliant = false;
+    var isCoiEnabledForUser = false;
+    var filterRule = ChatMessageFilterRule.none;
+    String mailboxRoot;
+    var capabilities = await connectedAccount.getIncomingCapabilities();
+    if (capabilities != null) {
+      isServerCoiCompliant =
+          capabilities.where((c) => c.name == 'COI').isNotEmpty;
+      isServerWebPushCompliant =
+          capabilities.where((c) => c.name == 'WEBPUSH').isNotEmpty;
+    }
+    var hierarchySeparator = connectedAccount.getIncomingHierarchySeparator();
+
+    var entries = await connectedAccount.getMetaData(
+        '/private/vendor/vendor.dovecot/coi/config',
+        depth: MetaDataDepth.directChildren);
+    if (entries != null) {
+      for (var entry in entries) {
+        switch (entry.entry) {
+          case '/private/vendor/vendor.dovecot/coi/config/enabled':
+            isCoiEnabledForUser = entry.valueText?.toLowerCase() == 'yes';
+            break;
+          case '/private/vendor/vendor.dovecot/coi/config/mailbox-root':
+            mailboxRoot = entry.valueText;
+            break;
+          case '/private/vendor/vendor.dovecot/coi/config/message-filter':
+            switch (entry.valueText?.toLowerCase()) {
+              case 'none':
+                filterRule = ChatMessageFilterRule.none;
+                break;
+              case 'active':
+                filterRule = ChatMessageFilterRule.active;
+                break;
+              case 'seen':
+                filterRule = ChatMessageFilterRule.seen;
+                break;
+            }
+            break;
+          default:
+            print('Unexpected entry: ${entry.entry}');
+        }
+      }
+    }
+    return CoiServerConfiguration(
+        isServerCoiCompliant,
+        isServerWebPushCompliant,
+        hierarchySeparator,
+        isCoiEnabledForUser,
+        filterRule,
+        mailboxRoot);
+  }
+
+  Future<bool> setChatMessageFilterRule(
+      EmailAccount account, ChatMessageFilterRule rule) {
+    String ruleText;
+    switch (rule) {
+      case ChatMessageFilterRule.active:
+        ruleText = 'active';
+        break;
+      case ChatMessageFilterRule.seen:
+        ruleText = 'seen';
+        break;
+      default:
+        ruleText = 'none';
+        break;
+    }
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.setMetaData(
+        '/private/vendor/vendor.dovecot/coi/config/message-filter', ruleText);
+  }
+
+  Future<bool> enableCoiForUSer(EmailAccount account, [bool enabled = true]) {
+    var enabledValue = enabled ? 'yes' : 'NIL';
+    var connectedAccount = _getConnectedAccount(account);
+    return connectedAccount.setMetaData(
+        '/private/vendor/vendor.dovecot/coi/config/enabled', enabledValue);
   }
 
   Future<bool> sendMessage(bool isChatMessage, String text,

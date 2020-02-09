@@ -11,6 +11,8 @@ class Message {
   DateTime date;
   String subject;
   List<MessagePart> parts;
+
+  int sequenceId;
   bool get isChat =>
       (threadReference != null) && threadReference.startsWith(r'<chat$');
 

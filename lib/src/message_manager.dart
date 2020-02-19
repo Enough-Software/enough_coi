@@ -28,7 +28,7 @@ class MessageParser {
     var parsedMessage = Message.withId(GuidHelper.createGuid());
     parsedMessage.subject = mimeMessage.decodeHeaderValue('subject');
     //print('parsing ${parsedMessage.subject}...');
-    var fromRaw = mimeMessage.decodeHeaderValue('from');
+    var fromRaw = mimeMessage.getHeaderValue('from');
     if (fromRaw != null) {
       var addresses = MailHelper.parseEmailAddreses(fromRaw);
       if (addresses != null && addresses.isNotEmpty) {

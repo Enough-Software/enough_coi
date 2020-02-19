@@ -182,32 +182,15 @@ class ConnectedAccount {
 
   Future<Message> fetchMessageContents(Message message) async {
     var fetchHeaderResponse = await imapClient
-        .fetchMessagesByCriteria('${message.sequenceId} (BODY BODY.PEEK[1])');
+        .fetchMessagesByCriteria('${message.sequenceId} (BODY BODY.PEEK[])');
     var allMessages = fetchHeaderResponse.result;
     //print('allMessages.length=${allMessages?.length}');
-    if (allMessages?.length == 1) {
+    if (allMessages != null && allMessages.isNotEmpty) {
       var mimeMessage = allMessages.first;
-      var bodyPartText = mimeMessage.getBodyPart(1);
-      var structures = mimeMessage.body?.structures;
-      //print('structures.length=${structures?.length}');
-      String decodedText;
-      if (structures != null && structures.isNotEmpty) {
-        var structure = structures.first;
-        //print('type=${structure.type}');
-        if (structure.type == 'text') {
-          var charsets = structure.attributes
-              .where((a) => a.name.toUpperCase() == 'CHARSET');
-          if (charsets.isNotEmpty) {
-            var charset = charsets.first.value;
-            var transferEncoding = structure.encoding;
-            //print('charset=$charset encoder=$transferEncoding');
-            decodedText = EncodingsHelper.decodeText(
-                bodyPartText, transferEncoding, charset);
-          }
-        }
-      }
+      mimeMessage.parse();
+      var decodedText = mimeMessage.decodeContentText();
       if (decodedText == null) {
-        mimeMessage.text = bodyPartText;
+        mimeMessage.text = mimeMessage.bodyRaw;
         decodedText = mimeMessage.decodeContentText();
       }
       if (decodedText != null && decodedText.length > 50) {

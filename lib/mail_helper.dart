@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:enough_coi/message.dart';
 import 'package:enough_coi/src/http_client_helper.dart';
 import 'package:enough_coi/src/string_helper.dart';
+import 'package:enough_mail/encodings.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:basic_utils/basic_utils.dart' as basic;
 
@@ -339,27 +340,28 @@ class MailHelper {
     Cyrillic characters: медведь@с-балалайкой.рф
     Devanagari characters: संपर्क@डाटामेल.भारत
     */
-    var textParts = StringHelper.split(emailText);
+    var addressParts = StringHelper.splitAddressParts(emailText);
     var addresses = <EmailAddress>[];
-    for (var i = 0; i < textParts.length; i++) {
-      var text = textParts[i];
-      var address = EmailAddress.empty();
-      if (text.startsWith('"') && text.endsWith('"')) {
-        // this is a name
-        var name = text.substring(1, text.length - 1);
-        address.name = name;
-        i++;
-        text = textParts[i];
+    for (var addressPart in addressParts) {
+      //print('processing [$addressPart]');
+      var emailWord = StringHelper.findEmailAddress(addressPart);
+      if (emailWord == null) {
+        print(
+            'Warning: no valid email address: [$addressPart] in [$emailText]');
+        //throw (StateError('invalid state'));
+        continue;
       }
-      if (text.startsWith('<') && text.endsWith('>')) {
-        var email = text.substring(1, text.length - 1);
-        address.email = email;
-      } else if (text.contains('@')) {
-        address.email = text;
+      var name = emailWord.startIndex == 0
+          ? null
+          : addressPart.substring(0, emailWord.startIndex - 1).trim();
+      if (name != null && name.startsWith('"') && name.endsWith('"')) {
+        name = name.substring(1, name.length - 1);
       }
-      if (address.email != null) {
-        addresses.add(address);
+      if (name != null && name.startsWith('=?')) {
+        name = EncodingsHelper.decodeAny(name);
       }
+      var address = EmailAddress(name, emailWord.text);
+      addresses.add(address);
     }
     return addresses;
   }

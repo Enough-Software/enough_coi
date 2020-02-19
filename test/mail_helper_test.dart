@@ -535,5 +535,44 @@ void main() {
       expect(emails[2].name, isNull);
       expect(emails[2].email, 'other@domain.com');
     });
+
+    test('parseEmail without quoted name', () {
+      var emails = MailHelper.parseEmailAddreses(
+          'Roger Rabit <roger.rabit@domain.com>, "Peace, Purple"');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 1);
+      expect(emails[0].email, 'roger.rabit@domain.com');
+      expect(emails[0].name, 'Roger Rabit');
+    });
+
+    test('parseEmails without quoted names', () {
+      var emails = MailHelper.parseEmailAddreses(
+          'Roger Rabit <roger.rabit@domain.com>, "Peace, Purple" <purple@peace.com>, Hello World <hello@domain.org>');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 3);
+      expect(emails[0].email, 'roger.rabit@domain.com');
+      expect(emails[0].name, 'Roger Rabit');
+      expect(emails[1].email, 'purple@peace.com');
+      expect(emails[1].name, 'Peace, Purple');
+      expect(emails[2].email, 'hello@domain.org');
+      expect(emails[2].name, 'Hello World');
+    });
+
+    
+
+    test('parseEmails with encoding in name', () {
+      var emails = MailHelper.parseEmailAddreses(
+          '=?UTF-8?Q?Gra=C3=9Fer=2C_Karl-Heinz?= <some.one@domain.com>');
+      expect(emails, isNotNull);
+      expect(emails, isNotEmpty);
+      expect(emails.length, 1);
+      expect(emails[0].email, 'some.one@domain.com');
+      expect(emails[0].name, 'Graßer, Karl-Heinz');
+    });
+
+    
+
   });
 }

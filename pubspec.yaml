@@ -1,6 +1,6 @@
 name: enough_coi
 description: Experimental client for COI apps. [COI](https://coi-dev.org) is a server and client standard  for messaging based on email.
-version: 0.0.4
+version: 0.0.6
 homepage: https://github.com/Enough-Software/enough_coi
 
 environment:
@@ -12,7 +12,7 @@ dependencies:
   event_bus: ^1.1.0
   objectdb: ^1.0.7+1
   json_annotation: ^3.0.1
-  enough_mail: ^0.0.3
+  enough_mail: ^0.0.5
     #path: ../enough_mail
   uuid: ^2.0.4
 

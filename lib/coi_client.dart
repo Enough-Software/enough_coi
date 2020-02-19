@@ -254,7 +254,7 @@ class CoiClient {
         '/private/vendor/vendor.dovecot/webpush/subscriptions',
         depth: MetaDataDepth.directChildren);
     if (entries == null || entries.isEmpty) {
-      print('no webpush subscriptions found');
+      //print('no webpush subscriptions found');
       return null;
     }
     var subscriptions = <WebPushSubscription>[];
@@ -309,7 +309,7 @@ class CoiClient {
       isServerWebPushCompliant =
           capabilities.where((c) => c.name == 'WEBPUSH').isNotEmpty;
     }
-    var hierarchySeparator = connectedAccount.getIncomingHierarchySeparator();
+    var hierarchySeparator = await connectedAccount.getIncomingHierarchySeparator();
 
     var entries = await connectedAccount.getMetaData(
         '/private/vendor/vendor.dovecot/coi/config',

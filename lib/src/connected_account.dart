@@ -279,7 +279,11 @@ class ConnectedAccount {
     return Future.value(true);
   }
 
-  String getIncomingHierarchySeparator() {
-    return imapClient?.serverInfo?.pathSeparator;
+  Future<String> getIncomingHierarchySeparator() async {
+    await _connectIncomingIfRequired();
+    if (imapClient.serverInfo.pathSeparator == null) {
+      await imapClient.listMailboxes();
+    }
+    return imapClient.serverInfo.pathSeparator;
   }
 }

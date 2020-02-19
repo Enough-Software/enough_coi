@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:enough_coi/enough_coi.dart';
-
 enum WebPushMessageType { chat, mail, all }
 
 class WebPushSubscription {

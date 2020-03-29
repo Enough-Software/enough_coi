@@ -309,7 +309,8 @@ class CoiClient {
       isServerWebPushCompliant =
           capabilities.where((c) => c.name == 'WEBPUSH').isNotEmpty;
     }
-    var hierarchySeparator = await connectedAccount.getIncomingHierarchySeparator();
+    var hierarchySeparator =
+        await connectedAccount.getIncomingHierarchySeparator();
 
     var entries = await connectedAccount.getMetaData(
         '/private/vendor/vendor.dovecot/coi/config',
@@ -389,7 +390,7 @@ class CoiClient {
         'Content-Type', 'text/plain; charset=utf-8; format=flowed');
     message.addHeader('MIME-Version', '1.0');
     //message.addHeader('Content-Transfer-Encoding', ''); TODO define Content-Transfer-Encoding
-    var dateHeaderValue = EncodingsHelper.encodeDate(DateTime.now());
+    var dateHeaderValue = DateEncoding.encodeDate(DateTime.now());
     message.addHeader('Date', dateHeaderValue);
     if (isChatMessage) {
       subject ??=

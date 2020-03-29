@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:enough_mail/enough_mail.dart';
 
 class Message {
   String id;
@@ -6,8 +7,8 @@ class Message {
   String threadReference;
   String groupId;
   String fromId;
-  EmailAddress from;
-  List<EmailAddress> recipients;
+  MailAddress from;
+  List<MailAddress> recipients;
   DateTime date;
   String subject;
   List<MessagePart> parts;
@@ -31,12 +32,9 @@ class Message {
       (recipients != null) &&
       (recipients.length == 1);
 
-  void addRecipients(List<EmailAddress> addresses) {
-    if (recipients == null) {
-      recipients = addresses;
-    } else {
-      recipients.addAll(addresses);
-    }
+  void addRecipients(List<MailAddress> addresses) {
+    recipients ??= <MailAddress>[];
+    recipients.addAll(addresses);
   }
 
   void addPart(MessagePart part) {
@@ -49,32 +47,19 @@ class Message {
   }
 }
 
-class EmailAddress {
-  String name;
-  String email;
-  String get domain =>
-      email.contains('@') ? email.substring(email.indexOf('@') + 1) : null;
-
-  EmailAddress(this.name, this.email);
-  EmailAddress.empty();
-}
-
 enum MessagePartType { text, image, audio, video, unknown }
 
 class MessagePart {
-  MessagePartType type;
+  MediaType type;
   MessagePart(this.type);
 }
 
 class TextMessagePart extends MessagePart {
   String text;
-  TextMessagePart(this.text) : super(MessagePartType.text);
+  TextMessagePart(this.text, MediaType mediaType) : super(mediaType);
 }
 
-enum ImageType { png, jpeg, gif, other }
-
 class ImageMessagePart extends MessagePart {
-  ImageType imageType;
   Uint8List data;
-  ImageMessagePart(this.imageType, this.data) : super(MessagePartType.image);
+  ImageMessagePart(this.data, MediaType mediaType) : super(mediaType);
 }

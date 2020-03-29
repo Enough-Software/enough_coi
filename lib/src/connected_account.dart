@@ -187,16 +187,7 @@ class ConnectedAccount {
     //print('allMessages.length=${allMessages?.length}');
     if (allMessages != null && allMessages.isNotEmpty) {
       var mimeMessage = allMessages.first;
-      mimeMessage.parse();
-      var decodedText = mimeMessage.decodeContentText();
-      if (decodedText == null) {
-        mimeMessage.text = mimeMessage.bodyRaw;
-        decodedText = mimeMessage.decodeContentText();
-      }
-      if (decodedText != null && decodedText.length > 50) {
-        decodedText = decodedText.substring(0, 50) + '...';
-      }
-      message.addPart(TextMessagePart(decodedText));
+      MessageParser.parse(mimeMessage, message);
     } else {
       print('unable to load ${message.sequenceId}');
     }

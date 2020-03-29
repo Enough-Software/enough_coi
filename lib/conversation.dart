@@ -32,10 +32,10 @@ class Conversation {
       if (message.from?.email == account.email) {
         if (message.recipients.isNotEmpty) {
           var recipient = message.recipients.first;
-          conversation.name = recipient.name ?? recipient.email;
+          conversation.name = recipient.personalName ?? recipient.email;
         }
       } else {
-        conversation.name = message.from?.name ?? message.from?.email;
+        conversation.name = message.from?.personalName ?? message.from?.email;
       }
     }
     conversation.isChat = message.isChat;
